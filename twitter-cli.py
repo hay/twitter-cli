@@ -18,8 +18,14 @@ api = TwitterAPI(
     config["access_token_secret"]
 )
 
+def get_time(complete = True):
+    if complete:
+        return time.strftime("%Y-%m-%dT%H%M", time.localtime())
+    else:
+        return time.strftime('%Y-%m-%d', time.localtime())
+
 def search(q):
-    timestamp = time.strftime("%Y-%m-%dT%H%M", time.localtime())
+    timestamp = get_time(complete = True)
     filename = "stream-" + q + "-" + timestamp + ".json"
     f = open(filename, "a")
 
@@ -30,10 +36,24 @@ def search(q):
         f.write( "\n" )
 
 def timeline():
+    """Saves the authenticated users tweets to a datestamped json file"""
+    print "Saving the timeline"
+
+    timestamp = get_time(complete = False)
+    f = open("timeline_%s.json" % timestamp, "a")
     r = api.request('user')
-    f = open("timeline.json", "a")
 
     for msg in r.get_iterator():
+        # Check if we need a new logfile
+        timestamp_now = get_time(complete = False)
+
+        if timestamp_now != timestamp:
+            print timestamp_now, timestamp
+            print "New day, opening a new logfile"
+            f.close()
+            timestamp = get_time(complete = False)
+            f = open("timeline_%s.json" % timestamp, "a")
+
         f.write( json.dumps(msg) )
         f.write( "\n" )
 
