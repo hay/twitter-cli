@@ -1,3 +1,6 @@
 list.php
 timeline*.json
 config.json
+search*.json
+*.csv
+*.sh

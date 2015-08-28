@@ -1,5 +1,5 @@
 from TwitterAPI import TwitterAPI
-import json, argparse, sys, time
+import json, argparse, sys, time, urllib
 
 try:
     jsondata = file("./config.json").read()
@@ -18,6 +18,8 @@ api = TwitterAPI(
     config["access_token_secret"]
 )
 
+args = {}
+
 def get_time(complete = True):
     if complete:
         return time.strftime("%Y-%m-%dT%H%M", time.localtime())
@@ -25,6 +27,42 @@ def get_time(complete = True):
         return time.strftime('%Y-%m-%d', time.localtime())
 
 def search(q):
+    f = open("search-" + q + ".json", "a")
+
+    max_id = "inf"
+    params = { "q" : urllib.quote_plus(q) }
+
+    while max_id:
+        if max_id is not "inf":
+            params["max_id"] = max_id
+
+        print "MAX: " + str(max_id)
+
+        req = api.request("search/tweets", params)
+
+        import pdb;pdb.set_trace()
+
+        count = 0
+
+        for msg in req.get_iterator():
+            if msg["id"] < max_id:
+                max_id = msg["id"]
+
+            f.write( json.dumps(msg) + "\n" )
+
+            count += 1
+
+        if count == 1:
+            print "Okay, that's all folks!"
+            break
+        else:
+            print "Okay, got %s tweets" % count
+
+        time.sleep(1)
+
+    f.close()
+
+def query(q):
     timestamp = get_time(complete = True)
     filename = "stream-" + q + "-" + timestamp + ".json"
     f = open(filename, "a")
@@ -35,15 +73,60 @@ def search(q):
         f.write( json.dumps(msg) )
         f.write( "\n" )
 
+def user_timeline():
+    timestamp = get_time(complete = False)
+    f = open("timeline_%s-%s.json" % (args.user, timestamp), "w")
+
+    max_id = "inf"
+    params = {
+        "screen_name" : args.user,
+        "count" : 200
+    }
+
+    while max_id:
+        if max_id is not "inf":
+            params["max_id"] = max_id
+
+        print "MAX: " + str(max_id)
+
+        req = api.request("statuses/user_timeline", params)
+
+        count = 0
+
+        for msg in req.get_iterator():
+            if msg["id"] < max_id:
+                max_id = msg["id"]
+
+            f.write( json.dumps(msg) + "\n" )
+
+            count += 1
+
+        if count == 1:
+            print "Okay, that's all folks!"
+            break
+        else:
+            print "Okay, got %s tweets" % count
+
+        time.sleep(1)
+
+    f.close()
+
 def timeline():
     """Saves the authenticated users tweets to a datestamped json file"""
     print "Saving the timeline"
 
     timestamp = get_time(complete = False)
     f = open("timeline_%s.json" % timestamp, "a")
-    r = api.request('user')
 
-    for msg in r.get_iterator():
+    if args.user:
+        req = api.request("statuses/user_timeline", {
+            "screen_name" : args.user,
+            "count" : 200
+        })
+    else:
+        req = api.request('user')
+
+    for msg in req.get_iterator():
         # Check if we need a new logfile
         timestamp_now = get_time(complete = False)
 
@@ -67,17 +150,25 @@ def run_timeline():
         run_timeline();
 
 def main():
+    global args
+
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-q', '--query', type = str, help = "Gets all tweets and retweets for a specifc search query")
+    parser.add_argument('-q', '--query', type = str, help = "Gets all tweets and retweets for a specifc search query (realtime)")
     parser.add_argument('-t', '--timeline', action = "store_true", help = "Gets all tweets for the authenticated user")
+    parser.add_argument('-u', '--user', type = str, help = "Get a timeline with a username")
+    parser.add_argument('-s', '--search', type = str, help = "Get results for a search query (not realtime)")
 
     args = parser.parse_args()
 
     if args.query:
-        search(args.query)
+        query(args.query)
     elif args.timeline:
         run_timeline()
+    elif args.user:
+        user_timeline()
+    elif args.search:
+        search(args.search)
     else:
         parser.print_help()
 
