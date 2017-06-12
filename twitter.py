@@ -1,5 +1,10 @@
 from TwitterAPI import TwitterAPI
-import time, urllib.request, urllib.parse, urllib.error, json
+import time, urllib.request, urllib.parse, urllib.error, json, pdb
+
+USER_FIELDS = (
+    "name", "created_at", "id", "followers_count", "statuses_count",
+    "friends_count", "screen_name", "verified"
+)
 
 class Twitter:
     def __init__(self, config):
@@ -98,6 +103,36 @@ class Twitter:
             time.sleep(1)
 
         f.close()
+
+    def lookup(self, sid) :
+        req = self.api.request("statuses/lookup", {
+            "id" : sid,
+            "include_entities" : True
+        })
+
+        return json.loads(req.text)
+
+    def retweeters(self, sid):
+        req = self.api.request("statuses/retweeters/ids", {
+            "id" : sid
+        })
+
+        return json.loads(req.text)
+
+    def retweetstats(self, sid):
+        ids = [str(i) for i in self.retweeters(sid).get("ids", [])]
+        users = self.api.request("users/lookup", {
+            "user_id" : ",".join(ids)
+        })
+
+        stats = []
+
+        for user in users.get_iterator():
+            profile = { k:user.get(k, None) for k in USER_FIELDS }
+            stats.append(profile)
+
+        return stats
+
 
     def timeline(self):
         """Saves the authenticated users tweets to a datestamped json file"""

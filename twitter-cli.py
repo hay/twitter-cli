@@ -25,6 +25,10 @@ def main():
         help = "Get a timeline with a username")
     parser.add_argument('-s', '--search', type = str,
         help = "Get results for a search query (not realtime)")
+    parser.add_argument('-l', '--lookup',
+        help = "Get all the details for a single tweet")
+    parser.add_argument('-rts', '--retweetstats',
+        help = "Returns user info of up to 100 people that retweeted the tweet specified")
 
     args = parser.parse_args()
 
@@ -36,6 +40,18 @@ def main():
         twitter.user_timeline()
     elif args.search:
         twitter.search(args.search)
+    elif args.lookup:
+        twitter.lookup(args.lookup)
+    elif args.retweetstats:
+        sid = args.retweetstats
+        print("Collecting retweeters for %s" % sid)
+        users = twitter.retweetstats(sid)
+        path = "%s-retweeters.json" % sid
+
+        with open(path, "w") as f:
+            f.write(json.dumps(users))
+
+        print("Written retweeters to %s" % path)
     else:
         parser.print_help()
 
