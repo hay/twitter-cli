@@ -1,10 +1,12 @@
 from TwitterAPI import TwitterAPI
 import time, urllib.request, urllib.parse, urllib.error, json, pdb
-
 USER_FIELDS = (
     "name", "created_at", "id", "followers_count", "statuses_count",
     "friends_count", "screen_name", "verified"
 )
+
+def sanitize(s):
+    return "".join(x for x in s if x.isalnum())
 
 class Twitter:
     def __init__(self, config):
@@ -22,10 +24,13 @@ class Twitter:
             return time.strftime('%Y-%m-%d', time.localtime())
 
     def search(self, q):
-        f = open("search-" + q + ".json", "a")
+        f = open("search-" + sanitize(q) + ".json", "a")
 
         max_id = "inf"
-        params = { "q" : urllib.parse.quote_plus(q) }
+        params = {
+            "q" : urllib.parse.quote_plus(q),
+            "count" : 100
+        }
 
         while max_id:
             if max_id is not "inf":
@@ -38,7 +43,7 @@ class Twitter:
             count = 0
 
             for msg in req.get_iterator():
-                if msg["id"] < max_id:
+                if max_id == "inf" or (msg["id"] < max_id):
                     max_id = msg["id"]
 
                 f.write( json.dumps(msg) + "\n" )
@@ -56,8 +61,8 @@ class Twitter:
         f.close()
 
     def query(self, q):
-        timestamp = get_time(complete = True)
-        filename = "stream-" + q + "-" + timestamp + ".json"
+        timestamp = self.get_time(complete = True)
+        filename = "stream-" + sanitize(q) + "-" + timestamp + ".json"
         f = open(filename, "a")
 
         r = self.api.request('statuses/filter', { 'track' : q })
@@ -67,7 +72,7 @@ class Twitter:
             f.write( "\n" )
 
     def user_timeline(self):
-        timestamp = get_time(complete = False)
+        timestamp = self.get_time(complete = False)
         f = open("timeline_%s-%s.json" % (args.user, timestamp), "w")
 
         max_id = "inf"
@@ -138,7 +143,7 @@ class Twitter:
         """Saves the authenticated users tweets to a datestamped json file"""
         print("Saving the timeline")
 
-        timestamp = get_time(complete = False)
+        timestamp = self.get_time(complete = False)
         f = open("timeline_%s.json" % timestamp, "a")
 
         if args.user:
@@ -151,13 +156,13 @@ class Twitter:
 
         for msg in req.get_iterator():
             # Check if we need a new logfile
-            timestamp_now = get_time(complete = False)
+            timestamp_now = self.get_time(complete = False)
 
             if timestamp_now != timestamp:
                 print(timestamp_now, timestamp)
                 print("New day, opening a new logfile")
                 f.close()
-                timestamp = get_time(complete = False)
+                timestamp = self.get_time(complete = False)
                 f = open("timeline_%s.json" % timestamp, "a")
 
             f.write( json.dumps(msg) )
