@@ -2,7 +2,7 @@ from TwitterAPI import TwitterAPI
 import json, argparse, sys, time, urllib
 
 try:
-    jsondata = file("./config.json").read()
+    jsondata = open("./config.json").read()
 except:
     sys.exit("Could not find config.json file")
 
@@ -26,11 +26,24 @@ def get_time(complete = True):
     else:
         return time.strftime('%Y-%m-%d', time.localtime())
 
+def get_filename(filename):
+    if args.out:
+        return args.out
+    else:
+        return filename
+
 def search(q):
-    f = open("search-" + q + ".json", "a")
+    f = open(get_filename("search-" + q + ".json"), "a")
 
     max_id = "inf"
-    params = { "q" : urllib.quote_plus(q) }
+    ids = []
+
+    params = {
+        "q" : urllib.quote_plus(q),
+        "count" : 100
+    }
+
+    print "Going to search for " + params["q"]
 
     while max_id:
         if max_id is not "inf":
@@ -40,19 +53,26 @@ def search(q):
 
         req = api.request("search/tweets", params)
 
-        import pdb;pdb.set_trace()
-
         count = 0
 
         for msg in req.get_iterator():
-            if msg["id"] < max_id:
+            id_ = msg["id"]
+
+            # Check if this ID not written already, and if so,
+            # skip
+            if id_ in ids:
+                continue
+
+            ids.append(id_)
+
+            if id_ < max_id:
                 max_id = msg["id"]
 
             f.write( json.dumps(msg) + "\n" )
 
             count += 1
 
-        if count == 1:
+        if count <= 1:
             print "Okay, that's all folks!"
             break
         else:
@@ -64,7 +84,7 @@ def search(q):
 
 def query(q):
     timestamp = get_time(complete = True)
-    filename = "stream-" + q + "-" + timestamp + ".json"
+    filename = get_filename("stream-" + q + "-" + timestamp + ".json")
     f = open(filename, "a")
 
     r = api.request('statuses/filter', { 'track' : q })
@@ -73,9 +93,20 @@ def query(q):
         f.write( json.dumps(msg) )
         f.write( "\n" )
 
+def location(loc):
+    timestamp = get_time(complete = True)
+    filename = get_filename("stream-location-%s.json" % timestamp)
+    f = open(filename, "a")
+
+    r = api.request('statuses/filter', { 'locations' : loc })
+
+    for msg in r.get_iterator():
+        f.write( json.dumps(msg) )
+        f.write( "\n" )
+
 def user_timeline():
     timestamp = get_time(complete = False)
-    f = open("timeline_%s-%s.json" % (args.user, timestamp), "w")
+    f = open(get_filename("timeline_%s-%s.json" % (args.user, timestamp)), "w")
 
     max_id = "inf"
     params = {
@@ -116,7 +147,7 @@ def timeline():
     print "Saving the timeline"
 
     timestamp = get_time(complete = False)
-    f = open("timeline_%s.json" % timestamp, "a")
+    f = open(get_filename("timeline_%s.json" % timestamp), "a")
 
     if args.user:
         req = api.request("statuses/user_timeline", {
@@ -158,11 +189,15 @@ def main():
     parser.add_argument('-t', '--timeline', action = "store_true", help = "Gets all tweets for the authenticated user")
     parser.add_argument('-u', '--user', type = str, help = "Get a timeline with a username")
     parser.add_argument('-s', '--search', type = str, help = "Get results for a search query (not realtime)")
+    parser.add_argument('-o', '--out', type = str, help = "Specifies a custom filename for the export")
+    parser.add_argument('-l', '--location', type = str, help = "Get all tweets in a geolocation-bounded box (realtime)")
 
     args = parser.parse_args()
 
     if args.query:
         query(args.query)
+    elif args.location:
+        location(args.location)
     elif args.timeline:
         run_timeline()
     elif args.user:
