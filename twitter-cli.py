@@ -111,25 +111,24 @@ def user_timeline():
     timestamp = get_time(complete = False)
     f = open(get_filename("timeline_%s-%s.json" % (args.user, timestamp)), "w")
 
-    max_id = "inf"
     params = {
         "screen_name" : args.user,
         "count" : 200
     }
 
-    while max_id:
-        if max_id is not "inf":
-            params["max_id"] = max_id
-
-        print("MAX: " + str(max_id))
+    while True:
+        print(f"max_id: {params.get('max_id', None)}")
 
         req = api.request("statuses/user_timeline", params)
 
         count = 0
 
         for msg in req.get_iterator():
-            if msg["id"] < max_id:
-                max_id = msg["id"]
+            if "max_id" not in params:
+                params["max_id"] = msg["id"]
+
+            if msg["id"] < params["max_id"]:
+                params["max_id"] = msg["id"]
 
             f.write( json.dumps(msg) + "\n" )
 
