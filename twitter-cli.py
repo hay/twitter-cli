@@ -113,7 +113,8 @@ def user_timeline():
 
     params = {
         "screen_name" : args.user,
-        "count" : 200
+        "count" : 200,
+        "tweet_mode" : "extended"
     }
 
     while True:
