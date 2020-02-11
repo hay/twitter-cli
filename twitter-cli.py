@@ -40,7 +40,8 @@ def search(q):
 
     params = {
         "q" : urllib.quote_plus(q),
-        "count" : 100
+        "count" : 100,
+        "lang" : "nl"
     }
 
     print "Going to search for " + params["q"]

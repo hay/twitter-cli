@@ -1,21 +1,21 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import json, sys
-import unicodecsv as csv
+from dataknead import Knead
+
+TWITTER_LINK = "https://twitter.com/%s/status/%s"
 
 if len(sys.argv) < 2:
     sys.exit("Need filename")
 
 infile = open(sys.argv[1])
-outfile = open(sys.argv[1].replace(".json", ".csv"), "w")
-outcsv = csv.writer(outfile)
-
-outcsv.writerow(["id", "date", "user", "text", "location"])
+outfile = sys.argv[1].replace(".json", ".csv")
+tweets = []
 
 for tweet in infile:
     try:
         t = json.loads(tweet)
     except:
-        print "Could not convert this tweet"
+        print("Could not convert this tweet")
         continue
 
     try:
@@ -25,13 +25,18 @@ for tweet in infile:
     except:
         loc = ""
 
-    outcsv.writerow([
-        t["id"],
-        t["created_at"],
-        t["user"]["screen_name"].encode('utf-8'),
-        t["text"].encode('utf-8'),
-        loc
-    ])
+    tid =  t["id"]
+    user = t["user"]["screen_name"]
 
-infile.close()
-outfile.close()
+    tweets.append({
+        "id"   : tid,
+        "date" : t["created_at"],
+        "user" : user,
+        "user_link" : "https://twitter.com/%s" % user,
+        "text" : t["text"],
+        "tweet_link" : TWITTER_LINK % (user, tid),
+        "location" : loc,
+        "is_retweet" : bool(t.get("retweeted_status", False))
+    })
+
+Knead(tweets).write("tweets-amalia.csv")
