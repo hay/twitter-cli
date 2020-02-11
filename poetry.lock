@@ -1,0 +1,16 @@
+[[package]]
+category = "main"
+description = "Minimal wrapper for Twitter's REST and Streaming APIs"
+name = "twitterapi"
+optional = false
+python-versions = "*"
+version = "2.5.10"
+
+[metadata]
+content-hash = "3caad88e34c9abc877fba66d900b1fe78dbf170f1cda14169d1e1db5948f6d04"
+python-versions = "^3.6"
+
+[metadata.files]
+twitterapi = [
+    {file = "TwitterAPI-2.5.10.tar.gz", hash = "sha256:312297b4f44dee8870988cad4a8665995f1e3fb361b071e28e9e4a676c2b268e"},
+]

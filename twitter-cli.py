@@ -1,5 +1,7 @@
+#!/usr/bin/env python3
+
 from TwitterAPI import TwitterAPI
-import json, argparse, sys, time, urllib
+import json, argparse, sys, time, urllib.request, urllib.parse, urllib.error
 
 try:
     jsondata = open("./config.json").read()
@@ -39,18 +41,18 @@ def search(q):
     ids = []
 
     params = {
-        "q" : urllib.quote_plus(q),
+        "q" : urllib.parse.quote_plus(q),
         "count" : 100,
         "lang" : "nl"
     }
 
-    print "Going to search for " + params["q"]
+    print("Going to search for " + params["q"])
 
     while max_id:
         if max_id is not "inf":
             params["max_id"] = max_id
 
-        print "MAX: " + str(max_id)
+        print("MAX: " + str(max_id))
 
         req = api.request("search/tweets", params)
 
@@ -74,10 +76,10 @@ def search(q):
             count += 1
 
         if count <= 1:
-            print "Okay, that's all folks!"
+            print("Okay, that's all folks!")
             break
         else:
-            print "Okay, got %s tweets" % count
+            print("Okay, got %s tweets" % count)
 
         time.sleep(1)
 
@@ -119,7 +121,7 @@ def user_timeline():
         if max_id is not "inf":
             params["max_id"] = max_id
 
-        print "MAX: " + str(max_id)
+        print("MAX: " + str(max_id))
 
         req = api.request("statuses/user_timeline", params)
 
@@ -134,10 +136,10 @@ def user_timeline():
             count += 1
 
         if count == 1:
-            print "Okay, that's all folks!"
+            print("Okay, that's all folks!")
             break
         else:
-            print "Okay, got %s tweets" % count
+            print("Okay, got %s tweets" % count)
 
         time.sleep(1)
 
@@ -145,7 +147,7 @@ def user_timeline():
 
 def timeline():
     """Saves the authenticated users tweets to a datestamped json file"""
-    print "Saving the timeline"
+    print("Saving the timeline")
 
     timestamp = get_time(complete = False)
     f = open(get_filename("timeline_%s.json" % timestamp), "a")
@@ -163,8 +165,8 @@ def timeline():
         timestamp_now = get_time(complete = False)
 
         if timestamp_now != timestamp:
-            print timestamp_now, timestamp
-            print "New day, opening a new logfile"
+            print(timestamp_now, timestamp)
+            print("New day, opening a new logfile")
             f.close()
             timestamp = get_time(complete = False)
             f = open("timeline_%s.json" % timestamp, "a")
@@ -176,8 +178,8 @@ def run_timeline():
     try:
         timeline()
     except Exception as e:
-        print "Got some kind of error, waiting a minute, then trying again"
-        print e
+        print("Got some kind of error, waiting a minute, then trying again")
+        print(e)
         time.sleep(60)
         run_timeline();
 

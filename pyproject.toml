@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "twitter-cli"
+version = "0.1.0"
+description = "A command-line tool to search and save tweets, using the Streaming API."
+authors = ["Hay Kranen <huskyr@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.6"
+TwitterAPI = "^2.5.10"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
